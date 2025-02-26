@@ -1,0 +1,19 @@
+{
+  "name": "frogbox-graphics-scraper",
+  "version": "1.0.0",
+  "type": "commonjs",
+  "main": "main.js",
+  "scripts": {
+    "start": "node main.js"
+  },
+  "dependencies": {
+    "archiver": "^7.0.1",
+    "express": "^4.21.2",
+    "node-fetch": "^2.6.1",
+    "puppeteer": "^21.9.0",
+    "ws": "^8.18.0"
+  },
+  "engines": {
+    "node": "18.x"
+  }
+}

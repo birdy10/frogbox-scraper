@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Digital Scoreboard</title>
+    <style>
+        body {
+            background: black;
+            color: white;
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            font-size: 36px;
+            zoom: 400%;
+            zoom: 80%; /* Zoom the content */
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            zoom: 85%;
+        }
+
+        .data-row {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 10px;
+            text-align: center!important; /* Center align text */
+        }
+
+        .title-row {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 5px;
+            font-size: 0.8em;
+            opacity: 0.7;
+            text-align: center!important; /* Center align text */
+        }
+
+        .data-value {
+            color: #FF0000;
+            color: #00ff00;
+        }
+
+        .team1, .team2 {
+            text-align: center;
+        }
+
+        .video-controls {
+            display: flex;
+            gap: 10px;
+            z-index: 1000;
+            background: rgba(42, 42, 42, 0.9);
+            padding: 15px;
+            border-radius: 8px;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .video-button {
+            padding: 10px 20px;
+            background: #3fcf86;
+            border: none;
+            border-radius: 4px;
+            color: white;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.2s;
+        }
+
+        .video-button:hover {
+            background: #2ea76a;
+        }
+
+        .video-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.9);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1001;
+            transition: opacity 0.5s ease-out;
+        }
+
+        .video-container.visible {
+            display: flex;
+        }
+
+        .video-container.closing {
+            opacity: 0;
+        }
+
+        .video-container video {
+            max-width: 100%;
+            max-height: 100%;
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+            background: transparent;
+        }
+
+        .video-container video::-webkit-media-controls {
+            display: none !important;
+        }
+
+        .video-container video::-webkit-media-controls-enclosure {
+            display: none !important;
+        }
+
+        #animation-video-scoreboard {
+            max-width: 100%;
+            max-height: 100%;
+            -ms-overflow-style: none;  /* IE and Edge */
+            scrollbar-width: none;  /* Firefox */
+        }
+
+        #animation-video-scoreboard::-webkit-scrollbar {
+            display: none; /* Chrome, Safari and Opera */
+        }
+
+        .kill-video-button {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 10px 20px;
+            background: darkred;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            z-index: 1002;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .video-container.visible .kill-video-button {
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="title-row">
+            <div>Batsman 1</div>
+            <div>Total</div>
+            <div>Batsman 2</div>
+        </div>
+        <div class="data-row">
+            <div id="batsman1-name" class="data-value"></div>
+            <div id="team1-score" class="data-value"></div>
+            <div id="batsman2-name" class="data-value"></div>
+        </div>
+
+        <div class="title-row">
+            <div>Runs</div>
+            <div>Wickets</div>
+            <div>Runs</div>
+        </div>
+        <div class="data-row">
+            <div id="batsman1-runs" class="data-value"></div>
+            <div id="wickets" class="data-value"></div>
+            <div id="batsman2-runs" class="data-value"></div>
+        </div>
+
+        <div class="title-row">
+            <div>DLS</div>
+            <div>Overs</div>
+            <div>1st Inn</div>
+        </div>
+        <div class="data-row">
+            <div id="dls-score" class="data-value"></div>
+            <div id="overs" class="data-value"></div>
+            <div id="inning1-score" class="data-value"></div>
+        </div>
+    </div>
+
+    <div class="video-container" id="video-container-scoreboard">
+        <video id="animation-video-scoreboard" playsinline></video>
+    </div>
+
+    <script>
+        function updateContent(data) {
+            console.log('updateContent called with data:', data);
+            document.getElementById('batsman1-name').textContent = data.batsman1Name || '';
+            document.getElementById('team1-score').textContent = data.team1Score || '';
+            document.getElementById('batsman2-name').textContent = data.batsman2Name || '';
+            document.getElementById('batsman1-runs').textContent = data.batsman1Runs || '';
+            document.getElementById('wickets').textContent = data.wickets || '';
+            document.getElementById('batsman2-runs').textContent = data.batsman2Runs || '';
+            document.getElementById('dls-score').textContent = data.dlsScore || '';
+            document.getElementById('overs').textContent = data.overs || '';
+            document.getElementById('inning1-score').textContent = data.inning1Score || '';
+            console.log('Content updated');
+        }
+
+        window.addEventListener('message', function(event) {
+            console.log('Message received:', event);
+            if (event.data.type === 'updateScoreboard') {
+                updateContent(event.data.data);
+            } else if (event.data.type === 'playVideo') {
+                playVideo(event.data.videoPath);
+            } else if (event.data.type === 'killVideo') {
+                killVideo();
+            }
+        });
+
+        function playVideo(videoPath) {
+            const videoContainer = document.getElementById('video-container-scoreboard');
+            const video = document.getElementById('animation-video-scoreboard');
+            video.src = videoPath;
+            videoContainer.classList.add('visible');
+            video.play();
+
+            video.addEventListener('ended', () => {
+                videoContainer.classList.remove('visible');
+                video.currentTime = 0;
+            }, { once: true });
+        }
+
+        function killVideo() {
+            const videoContainer = document.getElementById('video-container-scoreboard');
+            const video = document.getElementById('animation-video-scoreboard');
+            
+            videoContainer.classList.add('closing');
+            video.pause();
+            video.currentTime = 0;
+            
+            setTimeout(() => {
+                videoContainer.classList.remove('visible', 'closing');
+            }, 500);
+        }
+    </script>
+</body>
+</html>
